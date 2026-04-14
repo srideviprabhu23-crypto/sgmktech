@@ -122,11 +122,74 @@ const TypingText = ({ text }: { text: string }) => {
   );
 };
 
+const FloatingShapes = () => {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+      {/* Lime Disk */}
+      <motion.div
+        className="absolute w-[300px] h-[300px] bg-[#bef264] rounded-full opacity-40 blur-3xl"
+        initial={{ x: "-10%", y: "20%" }}
+        animate={{ 
+          x: ["-10%", "5%", "-10%"],
+          y: ["20%", "25%", "20%"],
+          rotate: [0, 45, 0]
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      {/* Teal Disk */}
+      <motion.div
+        className="absolute w-[400px] h-[400px] bg-[#2dd4bf] rounded-full opacity-30 blur-[100px]"
+        initial={{ x: "60%", y: "10%" }}
+        animate={{ 
+          x: ["60%", "50%", "60%"],
+          y: ["10%", "20%", "10%"],
+          scale: [1, 1.1, 1]
+        }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      {/* Blue Disk */}
+      <motion.div
+        className="absolute w-[350px] h-[350px] bg-[#3b82f6] rounded-full opacity-20 blur-[80px]"
+        initial={{ x: "20%", y: "60%" }}
+        animate={{ 
+          x: ["20%", "30%", "20%"],
+          y: ["60%", "50%", "60%"],
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Glass Disks (Visual Accents) */}
+      <motion.div
+        className="absolute w-64 h-64 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-full"
+        style={{ top: "30%", left: "15%", rotateX: 45, rotateY: -20 }}
+        animate={{ 
+          y: [0, -30, 0],
+          rotateZ: [0, 10, 0]
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      <motion.div
+        className="absolute w-48 h-48 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full"
+        style={{ top: "50%", right: "20%", rotateX: -30, rotateY: 40 }}
+        animate={{ 
+          y: [0, 40, 0],
+          rotateZ: [0, -15, 0]
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  );
+};
+
 const BackgroundParticles = () => {
   const symbols = useMemo(() => ["{ }", "</>", "[ ]", "( )", "=>", "++", "&&", "||"], []);
   
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+      <FloatingShapes />
       {symbols.map((symbol, i) => (
         <motion.div
           key={i}
@@ -139,10 +202,10 @@ const BackgroundParticles = () => {
           animate={{
             y: [null, "-20vh", "120vh"],
             rotate: [null, 360],
-            opacity: [0, 0.2, 0]
+            opacity: [0, 0.15, 0]
           }}
           transition={{
-            duration: 20 + Math.random() * 20,
+            duration: 25 + Math.random() * 25,
             repeat: Infinity,
             ease: "linear",
             delay: i * 2
@@ -205,7 +268,7 @@ const CursorGlow = () => {
   const mouseY = useMotionValue(0);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: any) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
     };
@@ -215,7 +278,7 @@ const CursorGlow = () => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 w-96 h-96 bg-brand/5 rounded-full blur-[100px] pointer-events-none z-0 -translate-x-1/2 -translate-y-1/2"
+      className="fixed top-0 left-0 w-96 h-96 bg-brand/5 rounded-full blur-[120px] pointer-events-none z-0 -translate-x-1/2 -translate-y-1/2"
       style={{ x: mouseX, y: mouseY }}
     />
   );
@@ -225,6 +288,7 @@ const CursorGlow = () => {
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -234,7 +298,17 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
+
   const isActive = (path: string) => location.pathname === path;
+
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "About Us", path: "/about" },
+    { name: "Courses", path: "/courses" },
+  ];
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "glass py-3" : "bg-transparent py-6"}`}>
@@ -244,55 +318,112 @@ const Navbar = () => {
             whileHover={{ rotate: 180 }}
             className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center transition-transform"
           >
-            <Code2 className="text-black w-6 h-6" />
+            <Code2 className="text-white w-6 h-6" />
           </motion.div>
           <span className="text-xl font-display font-bold tracking-tighter">SGMK TECH</span>
         </Link>
+
+        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <Link to="/" className={`transition-colors ${isActive("/") ? "text-brand" : "hover:text-brand"}`}>Home</Link>
-          <Link to="/about" className={`transition-colors ${isActive("/about") ? "text-brand" : "hover:text-brand"}`}>About Us</Link>
-          <Link to="/courses" className={`transition-colors ${isActive("/courses") ? "text-brand" : "hover:text-brand"}`}>Courses</Link>
+          {navLinks.map((link) => (
+            <Link 
+              key={link.path}
+              to={link.path} 
+              className={`transition-colors ${isActive(link.path) ? "text-brand" : "text-slate-600 hover:text-brand"}`}
+            >
+              {link.name}
+            </Link>
+          ))}
           
           {user ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-full">
                 <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}`} className="w-6 h-6 rounded-full" alt="User" />
-                <span className="text-xs truncate max-w-[100px]">{user.displayName || user.email}</span>
+                <span className="text-xs truncate max-w-[100px] text-slate-700">{user.displayName || user.email}</span>
               </div>
-              <button onClick={logout} className="text-gray-400 hover:text-white transition-colors">
+              <button onClick={logout} className="text-slate-400 hover:text-brand transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <Link to="/signup" className={`transition-colors ${isActive("/signup") ? "text-brand" : "hover:text-brand"}`}>Sign Up</Link>
-              <Link to="/login" className="bg-brand text-black px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform">
+              <Link to="/signup" className={`transition-colors ${isActive("/signup") ? "text-brand" : "text-slate-600 hover:text-brand"}`}>Sign Up</Link>
+              <Link to="/login" className="bg-brand text-white px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform shadow-lg shadow-brand/20">
                 Login
               </Link>
             </div>
           )}
         </div>
+
+        {/* Mobile Toggle */}
+        <button 
+          className="md:hidden text-slate-900"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <LogIn className="w-6 h-6 rotate-90" /> : <Layout className="w-6 h-6" />}
+        </button>
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden glass border-t border-slate-200 overflow-hidden"
+          >
+            <div className="flex flex-col p-6 gap-4">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.path}
+                  to={link.path} 
+                  className={`text-lg font-medium ${isActive(link.path) ? "text-brand" : "text-slate-600"}`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <hr className="border-slate-200" />
+              {user ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}`} className="w-10 h-10 rounded-full" alt="User" />
+                    <span className="font-medium text-slate-700">{user.displayName || user.email}</span>
+                  </div>
+                  <button onClick={logout} className="flex items-center gap-2 text-red-500 font-medium">
+                    <LogOut className="w-5 h-5" /> Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <Link to="/login" className="text-lg font-medium text-slate-600">Login</Link>
+                  <Link to="/signup" className="bg-brand text-white text-center py-3 rounded-2xl font-bold">Sign Up</Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
 
 const Footer = () => (
-  <footer className="py-12 border-t border-white/5 bg-bg-dark">
+  <footer className="py-12 border-t border-slate-200 bg-white">
     <div className="container mx-auto px-6">
       <div className="flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
-            <Code2 className="text-black w-5 h-5" />
+            <Code2 className="text-white w-5 h-5" />
           </div>
           <span className="text-lg font-display font-bold tracking-tighter">SGMK TECH</span>
         </div>
-        <div className="flex gap-8 text-sm text-gray-500">
+        <div className="flex gap-8 text-sm text-slate-500">
           <a href="#" className="hover:text-brand transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-brand transition-colors">Terms of Service</a>
           <a href="#" className="hover:text-brand transition-colors">Contact Us</a>
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-slate-400">
           © 2026 SGMK Tech. All rights reserved.
         </div>
       </div>
@@ -328,7 +459,7 @@ const Counter = ({ target, label, suffix = "+" }: { target: number; label: strin
       <div className="text-5xl font-display font-bold text-brand mb-2">
         {count}{suffix}
       </div>
-      <div className="text-gray-400 font-medium uppercase tracking-widest text-xs">{label}</div>
+      <div className="text-slate-500 font-medium uppercase tracking-widest text-xs">{label}</div>
     </div>
   );
 };
@@ -337,12 +468,8 @@ const Counter = ({ target, label, suffix = "+" }: { target: number; label: strin
 
 const Home = () => (
   <div className="pt-20">
-    <section className="relative py-32 overflow-hidden min-h-[90vh] flex items-center">
+    <section className="relative py-24 md:py-32 overflow-hidden min-h-[90vh] flex items-center">
       <BackgroundParticles />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-20">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500 rounded-full blur-[120px]" />
-      </div>
       <div className="container mx-auto px-6 text-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -353,11 +480,11 @@ const Home = () => (
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="inline-block px-4 py-1.5 glass rounded-full text-xs font-bold tracking-widest text-brand uppercase mb-8"
+            className="inline-block px-4 py-1.5 glass rounded-full text-[10px] md:text-xs font-bold tracking-widest text-brand uppercase mb-8"
           >
             Empowering Future Innovators
           </motion.span>
-          <h1 className="text-6xl md:text-8xl font-display font-bold tracking-tighter mb-8 leading-[0.9]">
+          <h1 className="text-4xl md:text-8xl font-display font-bold tracking-tighter mb-8 leading-[1.1] md:leading-[0.9]">
             <TypingText text="Build Your Career with" /> <br />
             <motion.span 
               initial={{ opacity: 0 }}
@@ -372,7 +499,7 @@ const Home = () => (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2, duration: 1 }}
-            className="max-w-2xl mx-auto text-xl text-gray-400 leading-relaxed mb-12"
+            className="max-w-2xl mx-auto text-lg md:text-xl text-slate-500 leading-relaxed mb-12"
           >
             Premium tech education designed for future innovators and leaders. Join our global community of learners today.
           </motion.p>
@@ -380,12 +507,12 @@ const Home = () => (
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 2.5 }}
-            className="flex flex-wrap justify-center gap-4"
+            className="flex flex-col sm:flex-row justify-center gap-4"
           >
-            <Link to="/courses" className="bg-brand text-black px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(250,204,21,0.3)]">
+            <Link to="/courses" className="bg-brand text-white px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform shadow-xl shadow-brand/20">
               Explore Courses
             </Link>
-            <Link to="/signup" className="glass px-10 py-4 rounded-2xl font-bold text-lg hover:bg-white/10 transition-colors">
+            <Link to="/signup" className="glass px-10 py-4 rounded-2xl font-bold text-lg hover:bg-white/50 transition-colors">
               Get Started
             </Link>
           </motion.div>
@@ -394,7 +521,7 @@ const Home = () => (
     </section>
 
     <section className="py-24 container mx-auto px-6">
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { icon: Rocket, title: "Online Learning", desc: "Access high-quality video lessons anytime, anywhere." },
           { icon: Layout, title: "Offline Classes", desc: "Interactive classroom sessions with real-time mentorship." },
@@ -409,12 +536,12 @@ const Home = () => (
             viewport={{ once: true }}
           >
             <TiltCard className="h-full">
-              <div className="glass p-8 rounded-[2rem] hover:bg-white/5 transition-colors group h-full">
+              <div className="glass p-8 rounded-[2rem] hover:bg-white/50 transition-colors group h-full">
                 <div className="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <feature.icon className="text-brand w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{feature.desc}</p>
+                <p className="text-slate-500 text-sm leading-relaxed">{feature.desc}</p>
               </div>
             </TiltCard>
           </motion.div>
@@ -422,16 +549,16 @@ const Home = () => (
       </div>
     </section>
 
-    <section className="py-24 bg-surface/30 relative overflow-hidden">
+    <section className="py-24 bg-slate-50 relative overflow-hidden">
       <div className="container mx-auto px-6 text-center relative z-10">
         <motion.h2 
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          className="text-4xl font-display font-bold mb-16"
+          className="text-3xl md:text-4xl font-display font-bold mb-16"
         >
           Ready to Transform Your Future?
         </motion.h2>
-        <Link to="/signup" className="bg-brand text-black px-12 py-5 rounded-2xl font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_50px_rgba(250,204,21,0.2)]">
+        <Link to="/signup" className="bg-brand text-white px-12 py-5 rounded-2xl font-bold text-xl hover:scale-105 transition-transform shadow-xl shadow-brand/20">
           Get Started Today
         </Link>
       </div>
@@ -443,8 +570,8 @@ const About = () => (
   <div className="pt-20">
     <section className="py-24 container mx-auto px-6">
       <div className="max-w-4xl mx-auto text-center mb-20">
-        <h1 className="text-5xl md:text-7xl font-display font-bold mb-8">About SGMK Tech</h1>
-        <p className="text-xl text-gray-400">Building Future-Ready Professionals Through Innovation & Excellence</p>
+        <h1 className="text-4xl md:text-7xl font-display font-bold mb-8">About SGMK Tech</h1>
+        <p className="text-lg md:text-xl text-slate-500">Building Future-Ready Professionals Through Innovation & Excellence</p>
       </div>
       
       <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
@@ -452,14 +579,14 @@ const About = () => (
           <img src="https://picsum.photos/seed/sgmk-about/1200/800" className="w-full h-full object-cover rounded-[2rem]" alt="About" referrerPolicy="no-referrer" />
         </div>
         <div>
-          <h2 className="text-4xl font-display font-bold mb-6">Who We Are</h2>
-          <p className="text-lg text-gray-400 leading-relaxed">
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">Who We Are</h2>
+          <p className="text-lg text-slate-500 leading-relaxed">
             SGMK Tech is a professional learning platform delivering industry-focused programs in technology, business, and digital skills. We bridge the gap between ambition and industry expertise.
           </p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 mb-24">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
         {[
           { icon: Target, title: "Our Mission", desc: "To make high-quality education accessible." },
           { icon: Globe, title: "Our Vision", desc: "To become globally trusted platform." },
@@ -470,12 +597,12 @@ const About = () => (
               <item.icon className="text-brand w-8 h-8" />
             </div>
             <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
-            <p className="text-gray-400">{item.desc}</p>
+            <p className="text-slate-500">{item.desc}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-brand rounded-[3rem] p-16 grid md:grid-cols-3 gap-12">
+      <div className="bg-brand rounded-[3rem] p-8 md:p-16 grid grid-cols-1 md:grid-cols-3 gap-12">
         <Counter target={5000} label="Students" />
         <Counter target={20} label="Courses" />
         <Counter target={10} label="Countries" />
@@ -509,12 +636,12 @@ const Courses = () => {
     <div className="pt-32 pb-24">
       <div className="container mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16">
-          <div>
-            <h1 className="text-5xl font-display font-bold mb-4">Our Courses</h1>
-            <p className="text-gray-400">Master the most in-demand skills in tech.</p>
+          <div className="w-full md:w-auto">
+            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Our Courses</h1>
+            <p className="text-slate-500">Master the most in-demand skills in tech.</p>
           </div>
           <div className="relative w-full md:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
             <input 
               type="text" 
               placeholder="Search courses..." 
@@ -543,13 +670,13 @@ const Courses = () => {
                   exit={{ opacity: 0, scale: 0.9 }}
                 >
                   <TiltCard>
-                    <div className="glass p-8 rounded-3xl text-center group cursor-pointer h-full">
-                      <div className="w-16 h-16 mx-auto mb-6 relative">
+                    <div className="glass p-6 md:p-8 rounded-3xl text-center group cursor-pointer h-full">
+                      <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-6 relative">
                         <div className="absolute inset-0 bg-brand/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                         <img src={course.icon} className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform" alt={course.title} />
                       </div>
-                      <h3 className="font-bold text-sm mb-2 line-clamp-1">{course.title}</h3>
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">{course.category}</p>
+                      <h3 className="font-bold text-xs md:text-sm mb-2 line-clamp-1">{course.title}</h3>
+                      <p className="text-[9px] md:text-[10px] text-slate-500 uppercase tracking-widest font-medium">{course.category}</p>
                     </div>
                   </TiltCard>
                 </motion.div>
@@ -558,13 +685,13 @@ const Courses = () => {
           </div>
         ) : (
           <div className="text-center py-24 glass rounded-[3rem]">
-            <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-6" />
+            <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-6" />
             <h3 className="text-2xl font-bold mb-4">No courses found</h3>
-            <p className="text-gray-500 mb-8">We couldn't find any courses. You can try refreshing or seeding the database.</p>
+            <p className="text-slate-500 mb-8">We couldn't find any courses. You can try refreshing or seeding the database.</p>
             <div className="flex justify-center gap-4">
               <button 
                 onClick={() => window.location.reload()} 
-                className="bg-white/10 text-white px-8 py-3 rounded-2xl font-bold hover:bg-white/20 transition-colors"
+                className="bg-slate-100 text-slate-600 px-8 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
               >
                 Refresh Page
               </button>
@@ -610,7 +737,7 @@ const Courses = () => {
                   }
                   window.location.reload();
                 }} 
-                className="bg-brand text-black px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform"
+                className="bg-brand text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform shadow-lg shadow-brand/20"
               >
                 Seed Database
               </button>
@@ -666,25 +793,25 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button type="submit" className="w-full bg-brand text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform">
+          <button type="submit" className="w-full bg-brand text-white py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-brand/20">
             Login
           </button>
         </form>
 
         <div className="relative mb-8">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-surface px-2 text-gray-500">Or continue with</span></div>
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400">Or continue with</span></div>
         </div>
 
         <button 
           onClick={() => loginWithGoogle().then(() => navigate("/"))}
-          className="w-full glass py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white/5 transition-colors"
+          className="w-full glass py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-colors"
         >
           <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
           Google Account
         </button>
 
-        <p className="text-center mt-8 text-sm text-gray-500">
+        <p className="text-center mt-8 text-sm text-slate-500">
           Don't have an account? <Link to="/signup" className="text-brand font-bold">Sign Up</Link>
         </p>
       </motion.div>
@@ -751,12 +878,12 @@ const SignUp = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button type="submit" className="w-full bg-brand text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform">
+          <button type="submit" className="w-full bg-brand text-white py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-brand/20">
             Create Account
           </button>
         </form>
 
-        <p className="text-center mt-8 text-sm text-gray-500">
+        <p className="text-center mt-8 text-sm text-slate-500">
           Already have an account? <Link to="/login" className="text-brand font-bold">Login</Link>
         </p>
       </motion.div>

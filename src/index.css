@@ -5,26 +5,30 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   
-  --color-brand: #facc15;
-  --color-bg-dark: #0a0a0a;
-  --color-surface: #171717;
-  --color-surface-light: #262626;
+  --color-brand: #6366f1;
+  --color-bg-light: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
 }
 
 @layer base {
   body {
-    @apply bg-bg-dark text-white font-sans antialiased;
+    @apply bg-bg-light text-slate-900 font-sans antialiased selection:bg-brand/20 selection:text-brand;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+    @apply font-display text-slate-900 tracking-tight;
   }
 }
 
 .glass {
-  @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  @apply bg-white/40 backdrop-blur-2xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+}
+
+.glass-dark {
+  @apply bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-2xl;
 }
 
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-brand to-yellow-200;
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-slate-800 to-slate-600;
 }
