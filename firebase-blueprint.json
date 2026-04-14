@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "course": {
+      "title": "Course",
+      "description": "Educational course information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "category": { "type": "string" },
+        "level": { "type": "string" },
+        "duration": { "type": "string" }
+      },
+      "required": ["title", "icon"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "User profile documents"
+    },
+    "/courses/{courseId}": {
+      "schema": "course",
+      "description": "Course catalog documents"
+    }
+  }
+}
