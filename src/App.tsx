@@ -36,7 +36,12 @@ import {
   Shield,
   Cpu,
   Terminal,
-  Layers
+  Layers,
+  X,
+  Mail,
+  Phone,
+  MapPin,
+  ShieldAlert
 } from "lucide-react";
 import { useEffect, useState, useRef, createContext, useContext, FormEvent, ReactNode, useMemo, MouseEvent } from "react";
 import { 
@@ -70,7 +75,8 @@ import {
   getDocs, 
   onSnapshot, 
   query, 
-  orderBy 
+  orderBy,
+  addDoc
 } from "firebase/firestore";
 
 // --- Types ---
@@ -95,6 +101,127 @@ const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
+};
+
+// --- Lead Capture Popup ---
+
+const LeadCapturePopup = ({ 
+  onComplete, 
+  isSkippable = false, 
+  onSkip 
+}: { 
+  onComplete: () => void; 
+  isSkippable?: boolean; 
+  onSkip?: () => void;
+}) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [address, setAddress] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      // Saving to Firestore (Cloud NoSQL Database - highly scalable and reliable)
+      await addDoc(collection(db, "leads"), {
+        name,
+        email,
+        mobile,
+        address,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem("leadCaptured", "true");
+      onComplete();
+    } catch (error) {
+      console.error("Error saving lead:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm"
+    >
+      <motion.div 
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="glass p-8 rounded-[2.5rem] w-full max-w-md relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-2 bg-brand" />
+        
+        {isSkippable && (
+          <button 
+            onClick={onSkip}
+            className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-full transition-colors group"
+          >
+            <X className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
+          </button>
+        )}
+
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <UserPlus className="text-brand w-8 h-8" />
+          </div>
+          <h2 className="text-3xl font-display font-bold mb-2">
+            {isSkippable ? "Welcome!" : "Course Access"}
+          </h2>
+          <p className="text-slate-500">
+            {isSkippable 
+              ? "Join our community to get the latest updates." 
+              : "Please fill in your details to access our premium courses."}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="Full Name" 
+            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-brand outline-none transition-colors"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <input 
+            type="email" 
+            placeholder="Email Address" 
+            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-brand outline-none transition-colors"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input 
+            type="tel" 
+            placeholder="Mobile Number" 
+            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-brand outline-none transition-colors"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            required
+          />
+          <textarea 
+            placeholder="Address" 
+            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-brand outline-none transition-colors resize-none h-24"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full bg-brand text-white py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-brand/20 disabled:opacity-50"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Details"}
+          </button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
 };
 
 // --- Advanced Animation Components ---
@@ -310,6 +437,13 @@ const Navbar = () => {
     { name: "Courses", path: "/courses" },
   ];
 
+  if (user) {
+    navLinks.push({ name: "Dashboard", path: "/dashboard" });
+    if (user.email === "srideviprabhu23@gmail.com") {
+      navLinks.push({ name: "Admin", path: "/admin" });
+    }
+  }
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "glass py-3" : "bg-transparent py-6"}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
@@ -520,6 +654,86 @@ const Home = () => (
       </div>
     </section>
 
+    <section className="py-24 bg-slate-50">
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-display font-bold mb-4">Cutting-Edge Technology</h2>
+          <p className="text-slate-500 max-w-2xl mx-auto">We specialize in the most in-demand technologies, with a focus on AWS Cloud and Blockchain architecture.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <div className="glass p-8 rounded-[2.5rem] border-l-4 border-brand">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <Server className="text-orange-500 w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-bold">AWS Cloud Mastery</h3>
+              </div>
+              <p className="text-slate-600 leading-relaxed mb-6">
+                Master AWS Managed Blockchain and serverless architectures. Learn to build scalable, secure, and cost-effective cloud solutions used by the world's leading tech companies.
+              </p>
+              <ul className="space-y-3">
+                {["Serverless Computing", "AWS Managed Blockchain", "Cloud Security", "DevOps Automation"].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <ShieldCheck className="text-brand w-4 h-4" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="glass p-8 rounded-[2.5rem] border-l-4 border-blue-500">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Database className="text-blue-500 w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-bold">Blockchain Innovation</h3>
+              </div>
+              <p className="text-slate-600 leading-relaxed mb-6">
+                Dive deep into Ethereum, Hyperledger Fabric, and smart contract development. Understand the decentralized future and how to build Web3 applications.
+              </p>
+              <ul className="space-y-3">
+                {["Smart Contracts", "Decentralized Apps (dApps)", "Hyperledger Fabric", "Web3 Integration"].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <ShieldCheck className="text-blue-500 w-4 h-4" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            <div className="aspect-square glass rounded-[3rem] overflow-hidden relative group">
+              <img 
+                src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000" 
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                alt="Technology Architecture"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-12">
+                <div className="text-white">
+                  <p className="text-brand font-bold tracking-widest uppercase text-xs mb-2">Architecture</p>
+                  <h4 className="text-3xl font-bold leading-tight">Building the Future with AWS & Blockchain</h4>
+                </div>
+              </div>
+            </div>
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-brand/20 rounded-full blur-2xl animate-pulse" />
+            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
+          </motion.div>
+        </div>
+      </div>
+    </section>
+
     <section className="py-24 container mx-auto px-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
@@ -676,7 +890,15 @@ const Courses = () => {
                         <img src={course.icon} className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform" alt={course.title} />
                       </div>
                       <h3 className="font-bold text-xs md:text-sm mb-2 line-clamp-1">{course.title}</h3>
-                      <p className="text-[9px] md:text-[10px] text-slate-500 uppercase tracking-widest font-medium">{course.category}</p>
+                      <p className="text-[9px] md:text-[10px] text-slate-500 uppercase tracking-widest font-medium mb-4">{course.category}</p>
+                      <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[8px] font-bold text-brand bg-brand/10 px-2 py-0.5 rounded-full">Active</span>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <div key={s} className={`w-1 h-1 rounded-full ${s <= 4 ? "bg-brand" : "bg-slate-200"}`} />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </TiltCard>
                 </motion.div>
@@ -745,6 +967,300 @@ const Courses = () => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    // In a real app, we'd fetch enrolled courses from Firestore
+    // For this demo, we'll show a few "enrolled" courses with progress
+    const fetchEnrolled = async () => {
+      try {
+        const q = query(collection(db, "courses"), orderBy("title"));
+        const snapshot = await getDocs(q);
+        const allCourses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Mock enrollment: first 3 courses
+        const enrolled = allCourses.slice(0, 3).map(c => ({
+          ...c,
+          progress: Math.floor(Math.random() * 100)
+        }));
+        
+        setEnrolledCourses(enrolled);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEnrolled();
+  }, [user]);
+
+  if (!user) return <div className="pt-32 text-center">Please login to view your dashboard.</div>;
+
+  return (
+    <div className="pt-32 pb-24 container mx-auto px-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-12"
+      >
+        <h1 className="text-4xl font-display font-bold mb-4">Welcome back, {user.displayName || user.email}!</h1>
+        <p className="text-slate-500">Track your progress and continue your learning journey.</p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div className="lg:col-span-2">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <BookOpen className="text-brand w-6 h-6" />
+            Your Enrolled Courses
+          </h2>
+          
+          {loading ? (
+            <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div></div>
+          ) : enrolledCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {enrolledCourses.map((course) => (
+                <div key={course.id} className="glass p-6 rounded-3xl hover:bg-white/80 transition-colors group">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <img src={course.icon} className="w-6 h-6" alt={course.title} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold">{course.title}</h3>
+                      <p className="text-xs text-slate-500 uppercase tracking-widest">{course.category}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span>Progress</span>
+                      <span className="text-brand">{course.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${course.progress}%` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="h-full bg-brand"
+                      />
+                    </div>
+                  </div>
+                  
+                  <button className="w-full mt-6 py-3 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-brand transition-colors">
+                    Continue Learning
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="glass p-12 text-center rounded-[2.5rem]">
+              <p className="text-slate-500 mb-6">You haven't enrolled in any courses yet.</p>
+              <Link to="/courses" className="bg-brand text-white px-8 py-3 rounded-2xl font-bold inline-block">Browse Catalog</Link>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-8">
+          <div className="glass p-8 rounded-[2.5rem]">
+            <h3 className="text-xl font-bold mb-6">Learning Stats</h3>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <Zap className="text-orange-500 w-5 h-5" />
+                  </div>
+                  <span className="font-medium">Current Streak</span>
+                </div>
+                <span className="font-bold text-xl">5 Days</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Target className="text-blue-500 w-5 h-5" />
+                  </div>
+                  <span className="font-medium">Courses Completed</span>
+                </div>
+                <span className="font-bold text-xl">2</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <Star className="text-green-500 w-5 h-5" />
+                  </div>
+                  <span className="font-medium">Certificates</span>
+                </div>
+                <span className="font-bold text-xl">1</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass p-8 rounded-[2.5rem] bg-brand text-white">
+            <h3 className="text-xl font-bold mb-4">Upgrade to Pro</h3>
+            <p className="text-white/80 text-sm mb-6 leading-relaxed">Get unlimited access to all premium courses, certificates, and 1-on-1 mentorship.</p>
+            <button className="w-full py-4 rounded-2xl bg-white text-brand font-bold hover:scale-[1.02] transition-transform">
+              Go Premium
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminDashboard = () => {
+  const { user } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"users" | "leads">("leads");
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      try {
+        // Fetch Users
+        const usersSnap = await getDocs(collection(db, "users"));
+        setUsers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+        // Fetch Leads
+        const leadsSnap = await getDocs(query(collection(db, "leads"), orderBy("createdAt", "desc")));
+        setLeads(leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (err) {
+        console.error("Admin Fetch Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  if (!user) return <div className="pt-32 text-center">Unauthorized</div>;
+
+  return (
+    <div className="pt-32 pb-24 container mx-auto px-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6"
+      >
+        <div>
+          <h1 className="text-4xl font-display font-bold mb-2 flex items-center gap-3">
+            <ShieldAlert className="text-brand w-10 h-10" />
+            Admin Control Center
+          </h1>
+          <p className="text-slate-500">Manage your students and captured leads.</p>
+        </div>
+        
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+          <button 
+            onClick={() => setActiveTab("leads")}
+            className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === "leads" ? "bg-white shadow-sm text-brand" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            Leads ({leads.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab("users")}
+            className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === "users" ? "bg-white shadow-sm text-brand" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            Registered Users ({users.length})
+          </button>
+        </div>
+      </motion.div>
+
+      {loading ? (
+        <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div></div>
+      ) : (
+        <div className="space-y-6">
+          {activeTab === "leads" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {leads.map((lead) => (
+                <motion.div 
+                  key={lead.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="glass p-8 rounded-[2.5rem] relative overflow-hidden group hover:bg-white transition-colors"
+                >
+                  <div className="absolute top-0 right-0 p-4">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {new Date(lead.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center font-bold text-brand text-xl">
+                      {lead.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{lead.name}</h3>
+                      <p className="text-xs text-slate-400">Captured Lead</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <Mail className="w-4 h-4 text-brand" />
+                      <span className="truncate">{lead.email}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <Phone className="w-4 h-4 text-brand" />
+                      <span>{lead.mobile}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <MapPin className="w-4 h-4 text-brand" />
+                      <span className="line-clamp-1">{lead.address}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="glass rounded-[3rem] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-8 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">User</th>
+                      <th className="px-8 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Email</th>
+                      <th className="px-8 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Role</th>
+                      <th className="px-8 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.email}`} className="w-10 h-10 rounded-full" alt="" />
+                            <span className="font-bold text-slate-700">{u.displayName || "Anonymous"}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 text-slate-600">{u.email}</td>
+                        <td className="px-8 py-6">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${u.role === 'admin' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-slate-400 text-sm">
+                          {new Date(u.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -923,7 +1439,19 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Save user data to Firestore as recommended
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        role: user.email === "srideviprabhu23@gmail.com" ? "admin" : "student",
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+
     } catch (error) {
       console.error("Google Login Error:", error);
     }
@@ -961,6 +1489,78 @@ export default function App() {
     damping: 30,
     restDelta: 0.001
   });
+
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [showMandatoryPopup, setShowMandatoryPopup] = useState(false);
+  const [hasSubmittedLead, setHasSubmittedLead] = useState(false);
+
+  // Check storage on mount
+  useEffect(() => {
+    const isLeadCaptured = localStorage.getItem("leadCaptured");
+    if (isLeadCaptured) {
+      setHasSubmittedLead(true);
+    }
+  }, []);
+
+  const handleLeadComplete = () => {
+    localStorage.setItem("leadCaptured", "true");
+    setHasSubmittedLead(true);
+    setShowWelcomePopup(false);
+    setShowMandatoryPopup(false);
+  };
+
+  return (
+    <AuthProvider>
+      <Router>
+        <ScrollToTop />
+        <AppContent 
+          scaleX={scaleX}
+          showWelcomePopup={showWelcomePopup}
+          setShowWelcomePopup={setShowWelcomePopup}
+          showMandatoryPopup={showMandatoryPopup}
+          setShowMandatoryPopup={setShowMandatoryPopup}
+          hasSubmittedLead={hasSubmittedLead}
+          handleLeadComplete={handleLeadComplete}
+        />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+const AppContent = ({ 
+  scaleX, 
+  showWelcomePopup, 
+  setShowWelcomePopup, 
+  showMandatoryPopup, 
+  setShowMandatoryPopup, 
+  hasSubmittedLead,
+  handleLeadComplete 
+}: any) => {
+  const location = useLocation();
+
+  // Welcome Popup Logic: Show on any page except courses if not submitted and not skipped in this session
+  useEffect(() => {
+    const hasSkippedInSession = sessionStorage.getItem("welcomeSkipped");
+    if (!hasSubmittedLead && !hasSkippedInSession && location.pathname !== "/courses") {
+      setShowWelcomePopup(true);
+    } else {
+      setShowWelcomePopup(false);
+    }
+  }, [location.pathname, hasSubmittedLead, setShowWelcomePopup]);
+
+  // Mandatory Popup Logic: Show on courses page if not submitted
+  useEffect(() => {
+    if (location.pathname === "/courses" && !hasSubmittedLead) {
+      setShowMandatoryPopup(true);
+    } else {
+      setShowMandatoryPopup(false);
+    }
+  }, [location.pathname, hasSubmittedLead, setShowMandatoryPopup]);
+
+  const handleSkipWelcome = () => {
+    sessionStorage.setItem("welcomeSkipped", "true");
+    setShowWelcomePopup(false);
+  };
 
   // Seed data if needed
   useEffect(() => {
@@ -1016,26 +1616,60 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <div className="min-h-screen bg-bg-dark selection:bg-brand selection:text-black relative overflow-hidden">
-          <CursorGlow />
-          <motion.div
-            className="fixed top-0 left-0 right-0 h-1 bg-brand z-[60] origin-left"
-            style={{ scaleX }}
+    <div className="min-h-screen bg-bg-dark selection:bg-brand selection:text-black relative overflow-hidden">
+      <CursorGlow />
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-brand z-[60] origin-left"
+        style={{ scaleX }}
+      />
+      <Navbar />
+      <AnimatePresence>
+        {showWelcomePopup && !hasSubmittedLead && (
+          <LeadCapturePopup 
+            isSkippable={true} 
+            onSkip={handleSkipWelcome} 
+            onComplete={handleLeadComplete} 
           />
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-          </Routes>
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+        )}
+        {showMandatoryPopup && !hasSubmittedLead && (
+          <LeadCapturePopup 
+            isSkippable={false} 
+            onComplete={handleLeadComplete} 
+          />
+        )}
+      </AnimatePresence>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/courses" element={
+          hasSubmittedLead ? <Courses /> : (
+            <div className="min-h-screen bg-bg-light flex items-center justify-center">
+              <BackgroundParticles />
+              <div className="text-center p-12 glass rounded-[3rem] max-w-lg mx-auto relative z-10">
+                <div className="w-20 h-20 bg-brand/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Shield className="text-brand w-10 h-10" />
+                </div>
+                <h2 className="text-4xl font-display font-bold mb-4">Content Locked</h2>
+                <p className="text-slate-500 text-lg mb-8">
+                  Our premium course catalog is exclusive to our registered community. 
+                  Please fill out the form to unlock instant access.
+                </p>
+                <button 
+                  onClick={() => setShowMandatoryPopup(true)}
+                  className="bg-brand text-white px-12 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-brand/20 hover:scale-105 transition-transform"
+                >
+                  Unlock Courses
+                </button>
+              </div>
+            </div>
+          )
+        } />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+      <Footer />
+    </div>
   );
 }

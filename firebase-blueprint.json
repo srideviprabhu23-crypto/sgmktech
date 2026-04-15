@@ -28,6 +28,19 @@
         "duration": { "type": "string" }
       },
       "required": ["title", "icon"]
+    },
+    "lead": {
+      "title": "Lead",
+      "description": "Captured lead information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "mobile": { "type": "string" },
+        "address": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "mobile", "address"]
     }
   },
   "firestore": {
@@ -38,6 +51,10 @@
     "/courses/{courseId}": {
       "schema": "course",
       "description": "Course catalog documents"
+    },
+    "/leads/{leadId}": {
+      "schema": "lead",
+      "description": "Captured lead documents"
     }
   }
 }

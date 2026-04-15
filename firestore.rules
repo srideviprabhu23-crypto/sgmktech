@@ -34,6 +34,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+         request.auth.token.email == "srideviprabhu23@gmail.com");
+    }
+
     function isValidEmail(email) {
       return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     }
@@ -53,17 +59,24 @@ service cloud.firestore {
 
     // Rules
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
-                      request.resource.data.role == resource.data.role; // Prevent self-role-escalation
+                      (request.resource.data.role == resource.data.role || isAdmin());
     }
 
     match /courses/{courseId} {
       // Allow public read for the course catalog
       allow read: if true;
-      // Allow public write for initial seeding (will be restricted later)
-      allow write: if true;
+      // Allow admins to manage courses
+      allow write: if isAdmin();
+    }
+
+    match /leads/{leadId} {
+      // Allow public creation of leads
+      allow create: if true;
+      // Allow admins to view and manage leads
+      allow read, update, delete: if isAdmin(); 
     }
     
     match /test/connection {
