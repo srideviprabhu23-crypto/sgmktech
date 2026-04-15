@@ -1320,7 +1320,21 @@ const Login = () => {
         </div>
 
         <button 
-          onClick={() => loginWithGoogle().then(() => navigate("/"))}
+          onClick={async () => {
+            try {
+              setError("");
+              await loginWithGoogle();
+              navigate("/");
+            } catch (err: any) {
+              if (err.code === "auth/popup-blocked") {
+                setError("Popup blocked by browser. Please allow popups for this site.");
+              } else if (err.code === "auth/unauthorized-domain") {
+                setError("This domain is not authorized for Google Login. Please add it in Firebase Console.");
+              } else {
+                setError(err.message || "Failed to login with Google");
+              }
+            }
+          }}
           className="w-full glass py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-colors"
         >
           <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
@@ -1340,6 +1354,7 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const { loginWithGoogle } = useAuth()!;
   const navigate = useNavigate();
 
   const handleSignUp = async (e: FormEvent) => {
@@ -1399,6 +1414,33 @@ const SignUp = () => {
           </button>
         </form>
 
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400">Or continue with</span></div>
+        </div>
+
+        <button 
+          onClick={async () => {
+            try {
+              setError("");
+              await loginWithGoogle();
+              navigate("/");
+            } catch (err: any) {
+              if (err.code === "auth/popup-blocked") {
+                setError("Popup blocked by browser. Please allow popups for this site.");
+              } else if (err.code === "auth/unauthorized-domain") {
+                setError("This domain is not authorized for Google Login. Please add it in Firebase Console.");
+              } else {
+                setError(err.message || "Failed to login with Google");
+              }
+            }
+          }}
+          className="w-full glass py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-colors"
+        >
+          <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+          Google Account
+        </button>
+
         <p className="text-center mt-8 text-sm text-slate-500">
           Already have an account? <Link to="/login" className="text-brand font-bold">Login</Link>
         </p>
@@ -1452,8 +1494,10 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         createdAt: new Date().toISOString()
       }, { merge: true });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google Login Error:", error);
+      // Throw error so the component can handle it
+      throw error;
     }
   };
 
