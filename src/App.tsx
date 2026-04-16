@@ -1460,19 +1460,22 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(u);
       setLoading(loading && false);
       if (u) {
-        // Ensure user doc exists
+        // Update last login or create user
         const userRef = doc(db, "users", u.uid);
         getDoc(userRef).then(snap => {
-          if (!snap.exists()) {
-            setDoc(userRef, {
-              uid: u.uid,
-              email: u.email,
-              displayName: u.displayName,
-              photoURL: u.photoURL,
+          const userData = {
+            uid: u.uid,
+            email: u.email,
+            displayName: u.displayName,
+            photoURL: u.photoURL,
+            lastLogin: new Date().toISOString(),
+            // Only set these if it's the first time
+            ...(snap.exists() ? {} : { 
               createdAt: new Date().toISOString(),
-              role: "student"
-            });
-          }
+              role: u.email === "srideviprabhu23@gmail.com" ? "admin" : "student"
+            })
+          };
+          setDoc(userRef, userData, { merge: true });
         });
       }
     });
@@ -1484,19 +1487,25 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      // Save user data to Firestore as recommended
-      await setDoc(doc(db, "users", user.uid), {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+
+      const userData = {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
-        role: user.email === "srideviprabhu23@gmail.com" ? "admin" : "student",
-        createdAt: new Date().toISOString()
-      }, { merge: true });
+        lastLogin: new Date().toISOString(),
+        ...(snap.exists() ? {} : { 
+          createdAt: new Date().toISOString(),
+          role: user.email === "srideviprabhu23@gmail.com" ? "admin" : "student"
+        })
+      };
+
+      await setDoc(userRef, userData, { merge: true });
 
     } catch (error: any) {
       console.error("Google Login Error:", error);
-      // Throw error so the component can handle it
       throw error;
     }
   };
